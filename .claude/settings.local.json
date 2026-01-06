@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn install:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build-app:*)",
+      "Bash(NODE_OPTIONS=--openssl-legacy-provider npm run build-app:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

@@ -54,13 +54,18 @@ export async function initHighlighter() {
 
   highlighterPromise = (async () => {
     try {
-      // Dynamic import for code splitting
-      const { createHighlighter } = await import('shiki/bundle/web');
-      highlighter = await createHighlighter({
+      // Load Shiki from CDN to avoid needing node_modules
+      // Using esm.sh which handles WASM and ES modules well
+      // Using 'full' bundle which includes all languages
+      const shiki = await import(
+        /* webpackIgnore: true */
+        'https://esm.sh/shiki@1.24.0'
+      );
+      highlighter = await shiki.createHighlighter({
         themes: Object.values(THEMES),
         langs: LANGUAGES
       });
-      console.log('Shiki highlighter initialized');
+      console.log('Shiki highlighter initialized from CDN');
       return highlighter;
     } catch (e) {
       console.error('Failed to initialize Shiki:', e);
