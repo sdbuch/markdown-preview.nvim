@@ -2,8 +2,14 @@ import React from 'react'
 import Head from 'next/head'
 import io from 'socket.io-client'
 import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
 import emoji from 'markdown-it-emoji'
+import {
+  initHighlighter,
+  highlightCode,
+  getThemeForMode,
+  normalizeLang,
+  isReady
+} from './shikiHighlighter'
 import taskLists from 'markdown-it-task-lists'
 import footnote from 'markdown-it-footnote'
 import markdownItAnchor from 'markdown-it-anchor'
@@ -49,19 +55,13 @@ const DEFAULT_OPTIONS = {
     // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
     // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
     quotes: '“”‘’',
-    // Highlighter function. Should return escaped HTML,
-    // or '' if the source string is not changed and should be escaped externally.
-    // If result starts with <pre... internal wrapper is skipped.
+    // Highlighter function. Returns placeholder HTML with data attributes.
+    // Actual highlighting is done post-render by Shiki (async).
     highlight: function (str, lang) {
-      if (lang && hljs.getLanguage(lang)) {
-        try {
-          return `<pre class="hljs"><code>${
-            hljs.highlight(lang, str, true).value
-          }</code></pre>`;
-        } catch (__) {}
-      }
-
-      return `<pre class="hljs"><code>${escape(str)}</code></pre>`;
+      const escapedCode = escape(str);
+      const normalizedLang = normalizeLang(lang) || '';
+      const encodedCode = encodeURIComponent(str);
+      return `<pre class="shiki-pending" data-lang="${normalizedLang}" data-code="${encodedCode}"><code>${escapedCode}</code></pre>`;
     },
   },
   katex: {
@@ -88,6 +88,7 @@ export default class PreviewPage extends React.Component {
       content: '',
       pageTitle: '',
       theme: '',
+      shikiTheme: 'monokai',
       themeModeIsVisible: false,
       contentEditable: false,
       disableFilename: 1
@@ -98,9 +99,16 @@ export default class PreviewPage extends React.Component {
   }
 
   handleThemeChange() {
-    this.setState((state) => ({
-      theme: state.theme === 'light' ? 'dark' : 'light',
-    }))
+    this.setState((state) => {
+      const newTheme = state.theme === 'light' ? 'dark' : 'light';
+      return {
+        theme: newTheme,
+        shikiTheme: getThemeForMode(newTheme)
+      };
+    }, () => {
+      // Re-highlight all code blocks with new theme
+      this.highlightPendingBlocks(true);
+    })
   }
 
   showThemeButton() {
@@ -149,6 +157,14 @@ export default class PreviewPage extends React.Component {
 
   componentDidMount() {
     this.startSocket(parseFloat(window.location.pathname.split('/')[2]))
+
+    // Initialize Shiki highlighter
+    initHighlighter().then(() => {
+      // Highlight any pending blocks that rendered before Shiki was ready
+      this.highlightPendingBlocks();
+    }).catch(err => {
+      console.error('Failed to initialize Shiki highlighter:', err);
+    });
   }
 
   onConnect() {
@@ -280,6 +296,7 @@ export default class PreviewPage extends React.Component {
         ),
         pageTitle,
         theme,
+        shikiTheme: getThemeForMode(theme),
         contentEditable: options.content_editable,
         disableFilename: options.disable_filename
       }, () => {
@@ -295,6 +312,9 @@ export default class PreviewPage extends React.Component {
           renderDiagram()
           renderFlowchart()
           renderDot()
+
+          // Highlight code blocks with Shiki
+          this.highlightPendingBlocks()
         }
         refreshScroll()
       })
@@ -314,6 +334,55 @@ export default class PreviewPage extends React.Component {
         }, 16);
       }
     }
+  }
+
+  /**
+   * Highlight pending code blocks with Shiki
+   * @param {boolean} forceAll - If true, re-highlight all blocks (for theme change)
+   */
+  highlightPendingBlocks(forceAll = false) {
+    if (!isReady()) {
+      return;
+    }
+
+    const selector = forceAll ? 'pre.shiki, pre.shiki-pending' : 'pre.shiki-pending';
+    const blocks = document.querySelectorAll(selector);
+    const theme = this.state.shikiTheme || getThemeForMode(this.state.theme);
+
+    blocks.forEach(block => {
+      const lang = block.dataset.lang;
+      const encodedCode = block.dataset.code;
+
+      if (!encodedCode) return;
+
+      try {
+        const code = decodeURIComponent(encodedCode);
+        const highlighted = highlightCode(code, lang, theme);
+
+        if (highlighted) {
+          // Replace the block with Shiki output
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = highlighted;
+          const newPre = wrapper.firstElementChild;
+
+          // Preserve data attributes for re-highlighting on theme change
+          newPre.dataset.lang = lang;
+          newPre.dataset.code = encodedCode;
+          newPre.classList.add('shiki');
+          newPre.classList.remove('shiki-pending');
+
+          block.replaceWith(newPre);
+        } else {
+          // Language not supported, keep escaped version but mark as processed
+          block.classList.remove('shiki-pending');
+          block.classList.add('shiki-fallback');
+        }
+      } catch (e) {
+        console.error('Error highlighting block:', e);
+        block.classList.remove('shiki-pending');
+        block.classList.add('shiki-error');
+      }
+    });
   }
 
   render() {
