@@ -10,6 +10,15 @@ for rendering output.
 /* jslint node: true */
 'use strict'
 
+// HTML escape function for safe placeholder output
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 // Test if potential opening or closing delimieter
 // Assumes that there is a "$" at state.src[pos]
 function isValidDelim (state, pos) {
@@ -159,6 +168,11 @@ export default function math_plugin (md, options) {
   options = options || {}
   options.macros = options.macros || {}
 
+  // Check if KaTeX is available (client-side only)
+  var isKatexAvailable = function () {
+    return typeof katex !== 'undefined'
+  }
+
   // set KaTeX as the renderer for markdown-it-simplemath
   var katexInline = function (latex) {
     const opt = {
@@ -167,11 +181,18 @@ export default function math_plugin (md, options) {
     if (opt.displayMode === undefined) {
       opt.displayMode = false
     }
+
+    // If KaTeX isn't loaded yet (SSR), output a placeholder
+    if (!isKatexAvailable()) {
+      const encoded = encodeURIComponent(latex)
+      return `<span class="katex-pending" data-katex="${encoded}" data-display="false">${escapeHtml(latex)}</span>`
+    }
+
     try {
       return katex.renderToString(latex, opt)
     } catch (error) {
       if (opt.throwOnError) { console.log(error) }
-      return latex
+      return `<span class="katex-error">${escapeHtml(latex)}</span>`
     }
   }
 
@@ -186,11 +207,18 @@ export default function math_plugin (md, options) {
     if (opt.displayMode === undefined) {
       opt.displayMode = true
     }
+
+    // If KaTeX isn't loaded yet (SSR), output a placeholder
+    if (!isKatexAvailable()) {
+      const encoded = encodeURIComponent(latex)
+      return `<div class="katex-pending katex-block" data-katex="${encoded}" data-display="true">${escapeHtml(latex)}</div>`
+    }
+
     try {
-      return '<p>' + katex.renderToString(latex, opt) + '</p>'
+      return '<p class="katex-block">' + katex.renderToString(latex, opt) + '</p>'
     } catch (error) {
       if (opt.throwOnError) { console.log(error) }
-      return latex
+      return `<div class="katex-error katex-block">${escapeHtml(latex)}</div>`
     }
   }
 
@@ -204,4 +232,52 @@ export default function math_plugin (md, options) {
   })
   md.renderer.rules.math_inline = inlineRenderer
   md.renderer.rules.math_block = blockRenderer
+}
+
+/**
+ * Render all pending KaTeX placeholders
+ * Call this client-side after the page has loaded and KaTeX is available
+ * @param {object} options - KaTeX options to use for rendering
+ */
+export function renderPendingKatex(options = {}) {
+  if (typeof katex === 'undefined') {
+    console.warn('KaTeX not loaded, cannot render math')
+    return
+  }
+
+  const defaultOptions = {
+    throwOnError: false,
+    errorColor: '#cc0000'
+  }
+  const opts = { ...defaultOptions, ...options }
+
+  // Debug: log macro count
+  console.log('KaTeX options:', {
+    hasMacros: !!opts.macros,
+    macroCount: opts.macros ? Object.keys(opts.macros).length : 0,
+    sampleMacros: opts.macros ? Object.keys(opts.macros).slice(0, 5) : []
+  })
+
+  const pending = document.querySelectorAll('.katex-pending')
+  pending.forEach(el => {
+    const encoded = el.dataset.katex
+    const displayMode = el.dataset.display === 'true'
+
+    if (!encoded) return
+
+    try {
+      const latex = decodeURIComponent(encoded)
+      const html = katex.renderToString(latex, {
+        ...opts,
+        displayMode
+      })
+      el.innerHTML = html
+      el.classList.remove('katex-pending')
+      el.classList.add('katex-rendered')
+    } catch (error) {
+      console.error('KaTeX rendering error:', error)
+      el.classList.remove('katex-pending')
+      el.classList.add('katex-error')
+    }
+  })
 }

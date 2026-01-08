@@ -299,18 +299,18 @@ Or
 
 **KaTeX:**
 
-    $\sqrt{3x-1}+(1+x)^2$
+$\sqrt{3x-1}+(1+x)^2$
 
-    $$\begin{array}{c}
+$$\begin{array}{c}
 
-    \nabla \times \vec{\mathbf{B}} -\, \frac1c\, \frac{\partial\vec{\mathbf{E}}}{\partial t} &
-    = \frac{4\pi}{c}\vec{\mathbf{j}}    \nabla \cdot \vec{\mathbf{E}} & = 4 \pi \rho \\
+\nabla \times \vec{\mathbf{B}} -\, \frac1c\, \frac{\partial\vec{\mathbf{E}}}{\partial t} &
+= \frac{4\pi}{c}\vec{\mathbf{j}}    \nabla \cdot \vec{\mathbf{E}} & = 4 \pi \rho \\
 
-    \nabla \times \vec{\mathbf{E}}\, +\, \frac1c\, \frac{\partial\vec{\mathbf{B}}}{\partial t} & = \vec{\mathbf{0}} \\
+\nabla \times \vec{\mathbf{E}}\, +\, \frac1c\, \frac{\partial\vec{\mathbf{B}}}{\partial t} & = \vec{\mathbf{0}} \\
 
-    \nabla \cdot \vec{\mathbf{B}} & = 0
+\nabla \cdot \vec{\mathbf{B}} & = 0
 
-    \end{array}$$
+\end{array}$$
 
 **mermaid:**
 
@@ -484,3 +484,67 @@ Vim support is powered by [@chemzqm/neovim](https://github.com/neoclide/neovim)
 ![btc](https://img.shields.io/keybase/btc/iamcco.svg?style=popout-square)
 
 ![WeChat and AliPay](https://user-images.githubusercontent.com/5492542/42771079-962216b0-8958-11e8-81c0-520363ce1059.png)
+
+---
+
+### KaTeX Macro Test
+
+Basic inline math: $E = mc^2$ and $\int_0^1 x^2 dx = \frac{1}{3}$
+
+**Letter macros:**
+- Blackboard bold: $\bbR^n$, $\bbC$, $\bbZ$, $\bbN$
+- Script: $\cA$, $\cB$, $\cH$
+- Calligraphic: $\sA$, $\sL$
+- Vectors: $\vx$, $\vy$, $\vA$, $\vB$, $\valpha$, $\vbeta$
+
+**Operators:**
+
+$$
+\argmin_{\vx \in \bbR^n} \norm{\vA\vx - \vb}_2^2
+$$
+
+$$
+\E{\norm{\vx - \vy}^2} \leq \half \Var{X}
+$$
+
+$$
+\nabla f(\vx) = \vA\tp \vA \vx - \vA\tp \vb
+$$
+
+**Calculus macros:**
+
+$$
+\Partial{f}{x} = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}
+$$
+
+$$
+\grad f = \begin{bmatrix} \Partial{f}{x_1} \\ \vdots \\ \Partial{f}{x_n} \end{bmatrix}
+$$
+
+**Probability:**
+
+$$
+\Pr{X > t} \leq \frac{\E{X}}{t}
+$$
+
+$$
+X_1, \ldots, X_n \simiid \cN(0, 1) \implies \frac{1}{n}\sum_{i=1}^n X_i \to 0 \quad \as
+$$
+
+**Delimiters:**
+
+- Absolute value: $\abs{x}$, auto-sized: $\Abs{\frac{a}{b}}$
+- Norm: $\norm{\vx}$, auto-sized: $\Norm{\sum_{i=1}^n \vx_i}$
+- Inner product: $\ip{\vx}{\vy}$
+- Set: $\set{x \in \bbR : x > 0}$
+- Floor/ceil: $\floor{x}$, $\ceil{y}$
+
+**Matrix operations:**
+
+$$
+\tr(\vA\vB) = \tr(\vB\vA), \quad \rank(\vA) \leq \min(m, n)
+$$
+
+$$
+\vA = \vU \diag(\vsigma) \vV\tp
+$$

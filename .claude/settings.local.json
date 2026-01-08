@@ -7,7 +7,14 @@
       "Bash(NODE_OPTIONS=--openssl-legacy-provider npm run build-app:*)",
       "Bash(git commit:*)",
       "Bash(git add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npx --yes yarn install)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl:*)",
+      "Bash(node -c:*)",
+      "Bash(node:*)",
+      "Bash(npx --yes acorn:*)",
+      "Bash(npx --yes next build:*)"
     ]
   }
 }
