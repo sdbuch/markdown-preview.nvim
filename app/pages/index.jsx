@@ -432,6 +432,7 @@ export default class PreviewPage extends React.Component {
           <script type="text/javascript" src="/_static/flowchart@1.13.0.min.js"></script>
           <script type="text/javascript" src="/_static/viz.js"></script>
           <script type="text/javascript" src="/_static/full.render.js"></script>
+          <script type="text/javascript" src="/_static/preview-persistence.js"></script>
         </Head>
         <main data-theme={this.state.theme}>
           <div id="page-ctn" contentEditable={contentEditable ? 'true' : 'false'}>

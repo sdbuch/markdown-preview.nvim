@@ -2,6 +2,7 @@ let s:mkdp_root_dir = expand('<sfile>:h:h:h')
 let s:mkdp_opts = {}
 let s:is_vim = !has('nvim')
 let s:mkdp_channel_id = s:is_vim ? v:null : -1
+let s:mkdp_server_ready = 0
 
 function! s:on_stdout(chan_id, msgs, ...) abort
   call mkdp#util#echo_messages('Error', a:msgs)
@@ -11,6 +12,7 @@ function! s:on_stderr(chan_id, msgs, ...) abort
 endfunction
 function! s:on_exit(chan_id, code, ...) abort
   let s:mkdp_channel_id = s:is_vim ? v:null : -1
+  let s:mkdp_server_ready = 0
 endfunction
 
 function! s:start_vim_server(cmd) abort
@@ -38,6 +40,7 @@ function! s:start_vim_server(cmd) abort
 endfunction
 
 function! mkdp#rpc#start_server() abort
+  let s:mkdp_server_ready = 0
   let l:mkdp_server_script = s:mkdp_root_dir . '/app/bin/markdown-preview-' . mkdp#util#get_platform()
   if executable(l:mkdp_server_script)
     let l:cmd = [l:mkdp_server_script, '--path', s:mkdp_root_dir . '/app/server.js']
@@ -85,6 +88,7 @@ function! mkdp#rpc#stop_server() abort
     endif
     let s:mkdp_channel_id = -1
   endif
+  let s:mkdp_server_ready = 0
   let b:MarkdownPreviewToggleBool = 0
 endfunction
 
@@ -94,7 +98,7 @@ function! mkdp#rpc#get_server_status() abort
   elseif !s:is_vim && s:mkdp_channel_id ==# -1
     return -1
   endif
-  return 1
+  return s:mkdp_server_ready ? 1 : 0
 endfunction
 
 function! mkdp#rpc#preview_refresh() abort
@@ -124,6 +128,7 @@ function! mkdp#rpc#preview_close() abort
 endfunction
 
 function! mkdp#rpc#open_browser() abort
+  let s:mkdp_server_ready = 1
   if s:is_vim
     if s:mkdp_channel_id !=# v:null
       call mkdp#rpc#notify(s:mkdp_channel_id, 'open_browser', { 'bufnr': bufnr('%') })

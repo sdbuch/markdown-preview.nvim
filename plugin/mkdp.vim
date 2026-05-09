@@ -11,7 +11,7 @@ endif
 " set to 1, the vim will auto close current preview window when change
 " from markdown buffer to another buffer
 if !exists('g:mkdp_auto_close')
-  let g:mkdp_auto_close = 1
+  let g:mkdp_auto_close = 0
 endif
 
 " set to 1, the vim will just refresh markdown when save the buffer or

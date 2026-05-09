@@ -137,8 +137,8 @@ let g:mkdp_auto_start = 0
 
 " set to 1, the nvim will auto close current preview window when changing
 " from Markdown buffer to another buffer
-" default: 1
-let g:mkdp_auto_close = 1
+" default: 0
+let g:mkdp_auto_close = 0
 
 " set to 1, Vim will refresh Markdown when saving the buffer or
 " when leaving insert mode. Default 0 is auto-refresh Markdown as you edit or

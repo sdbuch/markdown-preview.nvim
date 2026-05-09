@@ -25,7 +25,12 @@ endfunction
 " try open preview page
 function! s:try_open_preview_page(timer_id) abort
   let l:server_status = mkdp#rpc#get_server_status()
-  if l:server_status !=# 1
+  if l:server_status ==# 1
+    let s:try_id = ''
+    call mkdp#util#open_browser()
+  elseif l:server_status ==# 0
+    let s:try_id = timer_start(100, function('s:try_open_preview_page'))
+  else
     let s:try_id = ''
     call mkdp#rpc#stop_server()
     call mkdp#rpc#start_server()
@@ -41,7 +46,7 @@ function! mkdp#util#open_preview_page() abort
   if l:server_status ==# -1
     call mkdp#rpc#start_server()
   elseif l:server_status ==# 0
-    let s:try_id = timer_start(1000, function('s:try_open_preview_page'))
+    let s:try_id = timer_start(100, function('s:try_open_preview_page'))
   else
     call mkdp#util#open_browser()
   endif
@@ -56,6 +61,10 @@ endfunction
 
 " open browser
 function! mkdp#util#open_browser() abort
+  if get(s:, 'try_id', '') !=# ''
+    call timer_stop(s:try_id)
+    let s:try_id = ''
+  endif
   call mkdp#rpc#open_browser()
   call mkdp#autocmd#init()
 endfunction
@@ -193,4 +202,3 @@ function! mkdp#util#toggle_preview() abort
         let b:MarkdownPreviewToggleBool=0
     endif
 endfunction
-
